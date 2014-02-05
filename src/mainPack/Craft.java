@@ -1,4 +1,4 @@
-package spaceCraft;
+package mainPack;
 
 import java.awt.Image;
 import java.awt.event.KeyEvent;

@@ -1,4 +1,4 @@
-package spaceCraft;
+package mainPack;
 
 import javax.swing.*;
 
