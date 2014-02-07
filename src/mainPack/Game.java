@@ -22,7 +22,7 @@ public class Game extends JFrame implements ActionListener,WindowListener
 		super("SpaceCraft T2");
 		setSize(800, 480);
 		JPanel buttonPanel = new JPanel();
-		buttonPanel.setLayout(new GridLayout(1,2));
+		buttonPanel.setLayout(new GridLayout());
 		buttonPanel.add(startButton);
 		buttonPanel.add(pauseButton);
 		buttonPanel.add(quitButton);
