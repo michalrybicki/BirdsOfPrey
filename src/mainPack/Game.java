@@ -24,10 +24,10 @@ public class Game extends JFrame implements ActionListener,WindowListener
 	private JButton pauseButton = new JButton("Pause");
 	private JRadioButton serverButton = new JRadioButton("Server");
 	private JRadioButton clientButton = new JRadioButton("Client");
-	private JTextField ipAddress = new JTextField("192.168.1.100", 10);
-	private static Socket server;
+	private JTextField ipAddress = new JTextField("192.168.1.106", 10);
+	private static Socket serverNode;
 	
-	private boolean running = false;
+	private volatile boolean running = false;
 	private boolean paused = false;
 	private int fps = 0;
 	private ServerSocket serverSocket;
@@ -99,6 +99,7 @@ public class Game extends JFrame implements ActionListener,WindowListener
 		
 		setFocusable(true);
 		setVisible(true);
+		
 	}
 
 	public static void main(String[] args)
@@ -108,7 +109,6 @@ public class Game extends JFrame implements ActionListener,WindowListener
 
 	public void actionPerformed(ActionEvent e)
 	{ 
-
 		Object s = e.getSource();
 		if (s == startButton)
 		{
@@ -119,70 +119,18 @@ public class Game extends JFrame implements ActionListener,WindowListener
 				ipAddress.setEditable(false);
 				clientButton.setEnabled(false);
 				serverButton.setEnabled(false);
-				
+
+				if (serverButton.isSelected()) 
+				{	
+					startServer();
+				}
+				else
 				if (clientButton.isSelected()) 
 				{
+					
 					if(validateIPAddress(ipAddress.getText()))
 					{	
-						Color color= Color.BLACK; 
-						ipAddress.setForeground(color);
-						
-						Thread checkIfReachable = new Thread()
-						{
-							public void run()
-							{
-								if(isIPReachable(ipAddress.getText()) == false)
-								{
-									System.out.println("IP not found.");
-								}
-								
-								String serverIP = "127.0.0.1";
-								
-								try
-								{
-									server = new Socket(serverIP, 6677);
-								}
-								catch (Exception e)
-								{
-									System.out.println("Could not connect to:" + serverIP);	
-								} 
-								if (server != null)
-								{
-									PrintWriter out = null;
-									try {
-										out = new PrintWriter(server.getOutputStream());
-									} catch (IOException e) {
-										 
-										e.printStackTrace();
-									}
-						 
-						 
-									out.println("Hello2");
-									out.flush();
-										
-									
-										BufferedReader in = null;
-										try {
-											in = new BufferedReader( new InputStreamReader(server.getInputStream()));
-									 
-											String inputLine;
-											 
-												while ((inputLine = in.readLine()) != null) 
-												{
-													
-													System.out.println("Client got: " + inputLine);
-												}
-											} catch (IOException e) {
-												
-												
-												e.printStackTrace();
-											}		
-								}
-							}
-						};
-						checkIfReachable.start();
-						
-						
+						startClient();
 					}
 					else
 					{
@@ -190,69 +138,36 @@ public class Game extends JFrame implements ActionListener,WindowListener
 						ipAddress.setForeground(color); 
 						System.out.println("IP not correct ");
 					}
-				}	
-				if (serverButton.isSelected()) 
-				{
-
-					Thread startServer = new Thread()
-					{
-						public void run()
-						{
-							try 
-							{
-								final int PORT = 6677;
-								serverSocket = new ServerSocket(PORT);
-								Socket clientSocket;
-
-								while (true)
-								{					
-									System.out.println("Waiting for clients...");
-									clientSocket = serverSocket.accept();
-
-									System.out.println("Client connected from " + clientSocket.getLocalAddress().getHostName());
-
-									ClientHandling newClient = new ClientHandling(clientSocket);
-									Thread t = new Thread(newClient);
-									t.start();
-								}
-							} 
-							catch(SocketTimeoutException s1)
-							{
-								System.out.println("Socket timed out!");
-							}
-							catch(IOException e1)
-							{
-								System.out.println("Error: Prbobably server PORT already in use");
-								e1.printStackTrace();
-
-							} catch ( Exception e1) {
-
-								System.out.println("Error:");
-								e1.printStackTrace();
-							}
-						}
-					};
-					startServer.start();
-				 
-
 				}
-
+				
 				runGameLoop();
 			}
 			else
 			{
+				
 				startButton.setText("Start");
+				
 				if (serverButton.isSelected()) 
 				{
+					
+					try {
+						serverSocket.close();
+					} catch (IOException e1) {
+						 
+					}
+					
 					ipAddress.setEditable(false);
+					gamePanel.removeCrafts();
 				}
-				else
+				if (clientButton.isSelected())
 				{
 					ipAddress.setEditable(true);
+					System.out.println("Client stoped.");
 				}
 				clientButton.setEnabled(true);
 				serverButton.setEnabled(true);
-				System.out.println("Dissconected");
+				
+				
 			}
 		}
 		else if (s == pauseButton)
@@ -300,6 +215,7 @@ public class Game extends JFrame implements ActionListener,WindowListener
 		//Set focus on GAME
 		gamePanel.requestFocus();
 	}
+
 
 	//Create a new thread and run the gameLoop.
 	public void runGameLoop()
@@ -363,7 +279,7 @@ public class Game extends JFrame implements ActionListener,WindowListener
 				int thisSecond = (int) (lastUpdateTime / 1000000000);
 				if (thisSecond > lastSecondTime)
 				{
-					System.out.println("NEW SECOND " + thisSecond + " " + gamePanel.getFrameCount() + " Update Count=" + updateCount);
+					//System.out.println("NEW SECOND " + thisSecond + " " + gamePanel.getFrameCount() + " Update Count=" + updateCount);
 					fps = gamePanel.getFrameCount();
 					gamePanel.setFps(fps);
 					gamePanel.zeroFrameCount();
@@ -403,17 +319,14 @@ public class Game extends JFrame implements ActionListener,WindowListener
 		for (String str : octets)
 		{
 			int i;
-			try
-			{
+			try	{
 				i = Integer.parseInt(str);
 			}
-			catch(NumberFormatException ex)
-			{ 
+			catch(NumberFormatException ex){ 
 				  i=-1;
 			}
 			
-			if ((i<0) || (i>255))
-			{
+			if ((i<0) || (i>255)){
 				return false;
 			}
 		}
@@ -424,31 +337,162 @@ public class Game extends JFrame implements ActionListener,WindowListener
 	{
 		boolean reachable = false;
 
-	    try {		
+		try {		
 			InetAddress inet1 = InetAddress.getByName(ipAdd);
-			reachable = inet1.isReachable(5000);
-	    } catch (UnknownHostException e) 
-	    {
-	    	 
+			reachable = inet1.isReachable(1000);
+		} catch (UnknownHostException e) {
+
 		} catch (IOException e){
-			 
-				
+
 		}
-		 
+
 		return reachable;
 	}
 	
+	private void startServer() {
+		
+		gamePanel.addCraft(0);
+		
+		Thread startServerThr = new Thread()
+		{
+			public void run()
+			{
+				try 
+				{
+					final int PORT = 6677;
+					serverSocket = new ServerSocket(PORT);
+					Socket clientSocket;
+
+					while (true)
+					{		
 	
+						System.out.println("Waiting for clients...");
+						clientSocket = serverSocket.accept();
+
+						System.out.println("Client connected from " + clientSocket.getLocalAddress().getHostName());
+
+						ClientHandling newClient = new ClientHandling(clientSocket, gamePanel.getCrafts());
+						Thread t = new Thread(newClient);
+						t.start();
+					}
+					
+				} 
+				catch(SocketTimeoutException e)
+				{
+					System.out.println("Socket timed out!");
+				}
+				catch(IOException e)
+				{
+					if (running)
+					{
+						System.out.println("Error: Server PORT already in use");
+						e.printStackTrace();
+					}
+					else
+					{
+						System.out.println("Server for new clients closed.");
+					}
+
+				} catch ( Exception e) {
+
+					System.out.println("Error:");
+					e.printStackTrace();
+				}
+			}
+		};
+		startServerThr.start();
+		
+	}
+	
+	private void startClient() {
+		
+		
+		
+		Color color= Color.BLACK; 
+		ipAddress.setForeground(color);
+
+		Thread startClientThr = new Thread()
+		{
+			public void run()
+			{
+				if(isIPReachable(ipAddress.getText()) == false) {
+					System.out.println("IP not found.");
+					return;
+				}
+				
+				String serverIP = ipAddress.getText();
+
+				try {
+					serverNode = new Socket(serverIP, 6677);
+				}
+				catch (Exception e) {
+					System.out.println("Could not connect to:" + serverIP);	
+				} 
+				if (serverNode != null)
+				{
+					try {
+						PrintWriter out = null;
+						BufferedReader in = null;
+						out = new PrintWriter(serverNode.getOutputStream());
+						in = new BufferedReader( new InputStreamReader(serverNode.getInputStream()));
+
+						String inputLine = "";
+
+						//Get initial data from Server
+						inputLine = in.readLine();
+						System.out.println("Client Settings: " + inputLine);	
+						
+						//
+						gamePanel.addCraft(1);
+						
+						
+						out.println("50.0");
+						out.flush();
+						System.out.println("First XY to server sent");
+
+						
+						while (true) 
+						{
+							if((inputLine = in.readLine()) != null)
+							{
+								System.out.println("Client got: " + inputLine);									
+							}
+							else
+							{
+								break;
+							}
+							
+							System.out.println("Sending XY to server");
+							float fX= gamePanel.getCrafts().get(0).getX();
+							out.println(fX);
+							//float fY= gamePanel.getCrafts().get(0).getY();
+							
+							//out.println("cN=" +"1, cX=" + fX +"cY=" + fY );
+							out.flush();
+						}
+						serverNode.close();
+						
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+					
+
+				}
+			}
+		};
+
+		startClientThr.start();
+	}
 	
 	@Override
 	public void windowOpened(WindowEvent e) {
-		System.out.println("windowOpened");
+		//System.out.println("windowOpened");
 	}
 
 	@Override
 	public void windowClosing(WindowEvent e) {
 		running = false;
-		System.out.println("windowClosing");
+		//System.out.println("windowClosing");
 		System.exit(0);
 		dispose();
 	}
@@ -457,7 +501,7 @@ public class Game extends JFrame implements ActionListener,WindowListener
 	public void windowClosed(WindowEvent e) {
 
 		running = false;
-		System.out.println("windowClosed");
+		//System.out.println("windowClosed");
 		System.exit(0);
 		dispose();
 	}
@@ -474,12 +518,12 @@ public class Game extends JFrame implements ActionListener,WindowListener
 
 	@Override
 	public void windowActivated(WindowEvent e) {
-		System.out.println("windowActivated");
+		//System.out.println("windowActivated");
 	}
 
 	@Override
 	public void windowDeactivated(WindowEvent e) {
-		System.out.println("windowDeactivated");
+		//System.out.println("windowDeactivated");
 	}
 
 

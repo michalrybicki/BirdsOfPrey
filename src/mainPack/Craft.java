@@ -9,6 +9,7 @@ import javax.swing.ImageIcon;
 
 public class Craft {
 
+	private int craftNumber;
 	private static final int RES_DEG = 15;
 	private final int MAX_CRAFT_SPEED = 10;
 	private static final int MAX_DIRECTIONS = 360/RES_DEG;
@@ -40,7 +41,11 @@ public class Craft {
     private int panelHeight;
     
     
-    public Craft() {
+   
+    public Craft(int i2) {
+    	
+    	this.craftNumber = i2;
+    	
     	//Build Space craft
     	images = new ArrayList<Image>();
         for (int i=0; i<360; i+=RES_DEG) 
@@ -224,7 +229,6 @@ public class Craft {
 		
         if (key == KeyEvent.VK_SPACE){
         	if (now-lastTimeFired > 500) {
-        		System.out.print("->");
         		fire();
             	lastTimeFired = System.currentTimeMillis();
         	}
@@ -247,6 +251,10 @@ public class Craft {
         }
 	}
 
+	public void setCraftX(float craftX) {
+		this.craftX = craftX;
+	}
+
 	//Take no prisoners!
     public void fire() {
     	missiles.add(new Missile((int)craftX,(int)craftY, craftDirection*RES_DEG));
@@ -255,5 +263,13 @@ public class Craft {
     public ArrayList<Missile> getMissiles() {
         return missiles;
     }
+
+	public int getCraftNumber() {
+		return craftNumber;
+	}
+
+	public void setCraftNumber(int craftNumber) {
+		this.craftNumber = craftNumber;
+	}
     
 }

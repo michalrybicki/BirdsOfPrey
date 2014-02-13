@@ -17,15 +17,16 @@ class GamePanel extends JPanel
 
 	private int frameCount = 0;
 	private int fps = 0;
-	int lastDrawX, lastDrawY;
+ 
 	int drawX;
 	int drawY;
 
-	//-------------CRAFT---------------
-	Craft craft;
-	int lastDrawCraftX, lastDrawCraftY;
+	
+	private ArrayList<Craft> crafts;
+	
 	//---------------------------------
-
+	 
+	
 	public int getFps() {
 		return fps;
 	}
@@ -45,28 +46,47 @@ class GamePanel extends JPanel
 	private class TAdapter extends KeyAdapter {
 
 		public void keyReleased(KeyEvent e) {
-			craft.keyReleased(e);
+			if ( ! crafts.isEmpty())
+			{
+				crafts.get(0).keyReleased(e);
+			}
 		}
 
 		public void keyPressed(KeyEvent e) {
-			craft.keyPressed(e);
+			if ( ! crafts.isEmpty())
+			{
+				crafts.get(0).keyPressed(e);
+			}
 		}
 	}
 
 	public GamePanel()
 	{
 
- 
-
 		//-------------CRAFT--------------	  
 		addKeyListener(new TAdapter());
-		craft = new Craft();
-
+		
+		crafts = new ArrayList<Craft>();
+		 
 		//------------------------------
+		
 		setFocusable(true);
 		setBackground(Color.BLACK);
 		setDoubleBuffered(true);
 
+	}
+	
+	public void addCraft(int i)
+	{
+		crafts.add(new Craft(i));
+	}
+	
+	public ArrayList<Craft> getCrafts() {
+		return crafts;
+	}
+	
+	public void removeCrafts() {
+		crafts.clear();
 	}
 
 	public void setInterpolation(float interp)
@@ -77,65 +97,52 @@ class GamePanel extends JPanel
 	//Update direction and speed
 	public void update()
 	{
+		//Update Crafts
+		for (Craft craftTmp: crafts )
+		{
+			craftTmp.update(getWidth(),getHeight());
 
-		//Update Craft
-		craft.update(getWidth(),getHeight());
-
-		//Update Missiles
-		for (Missile ms: craft.getMissiles()) {
-			ms.update(getWidth(),getHeight());
-		}	   
+			//Update Missiles
+			for (Missile ms: craftTmp.getMissiles()) {
+				ms.update(getWidth(),getHeight());
+			}	
+		}
 	}
 
 	//Called by repaint()
 	public void paint(Graphics g)
 	{
-		//Set background.
+		//Clear all.
 		super.paint(g);
-
-		//requestFocus();
-		Graphics2D g2d = (Graphics2D)g;
-
-		Image craftImage = craft.getImage();
-		//Image craftImage = craft.getImage().getScaledInstance(48, 48, 10);
-
-		//Clear the old rectangle to save CPU.
-		g2d.setColor(getBackground());
 		 
-		//Cover last Craft position
-		g2d.fillRect(lastDrawCraftX-1, lastDrawCraftY-1, craft.getWidth()+2, craft.getHeight()+2);
-		
-		//Cover old text field
-		g2d.fillRect(5, 0, 75, 30);
+		Graphics2D g2d = (Graphics2D)g;
+  
+		for (Craft craftTmp: crafts )
+		{
 
+			//Get craft image
+			Image craftImage = craftTmp.getImage();
 
+			// Draw Missiles
+			ArrayList<Missile> msArray = craftTmp.getMissiles();
+			for (int i=0; i < msArray.size(); i++) {
+				Missile ms = (Missile) msArray.get(i);
+				drawX = (int) ((ms.getX() - ms.getLastX()) * interpolation + ms.getLastX() - ms.getWidth()/2);
+				drawY = (int) ((ms.getY() - ms.getLastY()) * interpolation + ms.getLastY() - ms.getHeight()/2);  
+				if (ms.isVisible())
+					g2d.drawImage(ms.getImage(), drawX, drawY, this);
+				else msArray.remove(i);
+			}
 
-		// Draw Missiles
-		ArrayList<Missile> msArray = craft.getMissiles();
-		for (int i=0; i < msArray.size(); i++) {
-			Missile ms = (Missile) msArray.get(i);
-			drawX = (int) ((ms.getX() - ms.getLastX()) * interpolation + ms.getLastX() - ms.getWidth()/2);
-			drawY = (int) ((ms.getY() - ms.getLastY()) * interpolation + ms.getLastY() - ms.getHeight()/2);  
-			if (ms.isVisible())
-				g2d.drawImage(ms.getImage(), drawX, drawY, this);
-			else msArray.remove(i);
+			//Draw Space Craft
+			int drawCraftX = (int) ((craftTmp.getX() - craftTmp.getLastX()) * interpolation + craftTmp.getLastX() - craftTmp.getWidth()/2);
+			int drawCraftY = (int) ((craftTmp.getY() - craftTmp.getLastY()) * interpolation + craftTmp.getLastY() - craftTmp.getHeight()/2);  
+			g2d.drawImage(craftImage, drawCraftX, drawCraftY, this);
 		}
 
-		//Draw Space Craft
-		int drawCraftX = (int) ((craft.getX() - craft.getLastX()) * interpolation + craft.getLastX() - craft.getWidth()/2);
-		int drawCraftY = (int) ((craft.getY() - craft.getLastY()) * interpolation + craft.getLastY() - craft.getHeight()/2);  
-		g2d.drawImage(craftImage, drawCraftX, drawCraftY, this);
-
-		lastDrawCraftX = drawCraftX;
-		lastDrawCraftY = drawCraftY;
-
-		lastDrawX = drawX;
-		lastDrawY = drawY;
-
-		//Draw Text
-		g2d.setColor(Color.BLACK);
-		g2d.drawString("FPS: " + fps, 5, 10);
-		g2d.dispose();
+		//Draw FPS Text
+		g2d.setColor(Color.WHITE);
+		g2d.drawString("FPS: " + fps, 10, 15);
 		frameCount++;
 	}
 }

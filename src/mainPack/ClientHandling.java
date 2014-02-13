@@ -4,14 +4,17 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 
 public class ClientHandling implements Runnable {
 
 	private Socket clientSocket;
-
-	public ClientHandling(Socket s)
+	private ArrayList<Craft> crafts;
+	
+	public ClientHandling(Socket s, ArrayList<Craft> craftList)
 	{
 		clientSocket = s;
+		crafts = craftList;
 	}
 
 	@Override
@@ -19,25 +22,39 @@ public class ClientHandling implements Runnable {
 	{
 		try
 		{
-			PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);                   
-			BufferedReader in = new BufferedReader( new InputStreamReader(clientSocket.getInputStream()));
+			PrintWriter outPW = new PrintWriter(clientSocket.getOutputStream(), true);                   
+			BufferedReader inBR = new BufferedReader( new InputStreamReader(clientSocket.getInputStream()));
 			{
-				String inputLine;
-				System.out.println("While1" );
+				//Send initial data to client:
+				String craftsData = "#N="+ crafts.size() +"#";
+				String inputLine = "";
 				
-				//Wait for inputLine
-				while ((inputLine = in.readLine()) != null) 
-				{
-					System.out.println("While_sendback");
-					out.println(inputLine);
-					out.flush();
-					
-					System.out.println("Server Got:" + inputLine);
-
-					System.out.println("While_end");
-
+				for (Craft craftTmp: crafts) {
+					craftsData +="cN="+ craftTmp.getCraftNumber() + ",cX="+ craftTmp.getX()+",cY="+craftTmp.getX() + ";";
 				}
-				System.out.println("While_dead");
+				outPW.println(craftsData);
+				outPW.flush();
+				
+				// Create Craft with next Number
+				crafts.add(new Craft(crafts.size()));
+				
+ 
+				//Wait for inputLine
+				while ((inputLine = inBR.readLine()) != null) 
+				{
+					//Get craft position
+					System.out.println("Server got:" + inputLine);
+	
+					float fX = Float.parseFloat(inputLine);
+					 crafts.get(1).setCraftX(fX);
+					//Send all crafts position
+					outPW.println(craftsData);
+					outPW.flush();
+					
+				}
+				
+				
+				System.out.println("ClientHandling(): after while");
 
 			}
 		} catch (IOException e) {
