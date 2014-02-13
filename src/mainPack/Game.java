@@ -4,8 +4,14 @@ import javax.swing.*;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 
 public class Game extends JFrame implements ActionListener,WindowListener
@@ -19,10 +25,12 @@ public class Game extends JFrame implements ActionListener,WindowListener
 	private JRadioButton serverButton = new JRadioButton("Server");
 	private JRadioButton clientButton = new JRadioButton("Client");
 	private JTextField ipAddress = new JTextField("192.168.1.100", 10);
-  
+	private static Socket server;
+	
 	private boolean running = false;
 	private boolean paused = false;
 	private int fps = 0;
+	private ServerSocket serverSocket;
 	 
 	 
 	public Game()
@@ -72,7 +80,6 @@ public class Game extends JFrame implements ActionListener,WindowListener
 		      .addComponent(clientButton))
 		      
 		);
-		
 
 		layout.linkSize(SwingConstants.HORIZONTAL,startButton,pauseButton, quitButton, ipAddress );
 		
@@ -119,16 +126,63 @@ public class Game extends JFrame implements ActionListener,WindowListener
 					{	
 						Color color= Color.BLACK; 
 						ipAddress.setForeground(color);
-					
-						if(isIPReachable(ipAddress.getText()))
-						{		
-							System.out.println("Found IP.");
-							System.out.println("Connecting to " + ipAddress.getText() );
-						}
-						else
+						
+						Thread checkIfReachable = new Thread()
 						{
-							System.out.println("IP not found.");
-						}
+							public void run()
+							{
+								if(isIPReachable(ipAddress.getText()) == false)
+								{
+									System.out.println("IP not found.");
+								}
+								
+								String serverIP = "127.0.0.1";
+								
+								try
+								{
+									server = new Socket(serverIP, 6677);
+								}
+								catch (Exception e)
+								{
+									System.out.println("Could not connect to:" + serverIP);	
+								} 
+								if (server != null)
+								{
+									PrintWriter out = null;
+									try {
+										out = new PrintWriter(server.getOutputStream());
+									} catch (IOException e) {
+										 
+										e.printStackTrace();
+									}
+						 
+						 
+									out.println("Hello2");
+									out.flush();
+										
+									
+										BufferedReader in = null;
+										try {
+											in = new BufferedReader( new InputStreamReader(server.getInputStream()));
+									 
+											String inputLine;
+											 
+												while ((inputLine = in.readLine()) != null) 
+												{
+													
+													System.out.println("Client got: " + inputLine);
+												}
+											} catch (IOException e) {
+												
+												
+												e.printStackTrace();
+											}		
+								}
+							}
+						};
+						checkIfReachable.start();
+						
+						
 					}
 					else
 					{
@@ -137,7 +191,52 @@ public class Game extends JFrame implements ActionListener,WindowListener
 						System.out.println("IP not correct ");
 					}
 				}	
-					
+				if (serverButton.isSelected()) 
+				{
+
+					Thread startServer = new Thread()
+					{
+						public void run()
+						{
+							try 
+							{
+								final int PORT = 6677;
+								serverSocket = new ServerSocket(PORT);
+								Socket clientSocket;
+
+								while (true)
+								{					
+									System.out.println("Waiting for clients...");
+									clientSocket = serverSocket.accept();
+
+									System.out.println("Client connected from " + clientSocket.getLocalAddress().getHostName());
+
+									ClientHandling newClient = new ClientHandling(clientSocket);
+									Thread t = new Thread(newClient);
+									t.start();
+								}
+							} 
+							catch(SocketTimeoutException s1)
+							{
+								System.out.println("Socket timed out!");
+							}
+							catch(IOException e1)
+							{
+								System.out.println("Error: Prbobably server PORT already in use");
+								e1.printStackTrace();
+
+							} catch ( Exception e1) {
+
+								System.out.println("Error:");
+								e1.printStackTrace();
+							}
+						}
+					};
+					startServer.start();
+				 
+
+				}
+
 				runGameLoop();
 			}
 			else

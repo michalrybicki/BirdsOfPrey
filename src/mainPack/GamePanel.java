@@ -14,10 +14,7 @@ class GamePanel extends JPanel
 {
 	private static final long serialVersionUID = 1L;
 	float interpolation;
-	float ballX, ballY, lastBallX, lastBallY;
-	int   ballWidth, ballHeight;
-	float ballXVel, ballYVel;
-	float ballSpeed;
+
 	private int frameCount = 0;
 	private int fps = 0;
 	int lastDrawX, lastDrawY;
@@ -59,13 +56,7 @@ class GamePanel extends JPanel
 	public GamePanel()
 	{
 
-		ballX = lastBallX = 100;
-		ballY = lastBallY = 100;
-		ballWidth = 25;
-		ballHeight = 25;
-		ballSpeed = 70;
-		ballXVel = (float) Math.random() * ballSpeed*2 - ballSpeed;
-		ballYVel = (float) Math.random() * ballSpeed*2 - ballSpeed;
+ 
 
 		//-------------CRAFT--------------	  
 		addKeyListener(new TAdapter());
@@ -86,41 +77,6 @@ class GamePanel extends JPanel
 	//Update direction and speed
 	public void update()
 	{
-
-		lastBallX = ballX;
-		lastBallY = ballY;
-
-		//Next position
-		ballX += ballXVel;
-		ballY += ballYVel;
-
-		//If hits Right wall
-		if (ballX + ballWidth/2 >= getWidth())
-		{    	
-			ballXVel *= -1;
-			ballX = getWidth() - ballWidth/2;
-			ballYVel = (float) Math.random() * ballSpeed*2 - ballSpeed;
-		}
-		//If hits Left Wall
-		else if (ballX - ballWidth/2 <= 0)
-		{		   
-			ballXVel *= -1;
-			ballX = ballWidth/2;
-		}
-
-		//If hits bottom
-		if (ballY + ballHeight/2 >= getHeight())
-		{		   
-			ballYVel *= -1;
-			ballY = getHeight() - ballHeight/2;
-			ballXVel = (float) Math.random() * ballSpeed*2 - ballSpeed;
-		}
-		//If hits up
-		else if (ballY - ballHeight/2 <= 0)
-		{		   
-			ballYVel *= -1;
-			ballY = ballHeight/2;
-		}
 
 		//Update Craft
 		craft.update(getWidth(),getHeight());
@@ -145,18 +101,14 @@ class GamePanel extends JPanel
 
 		//Clear the old rectangle to save CPU.
 		g2d.setColor(getBackground());
-		//Cover last ball position
-		g2d.fillRect(lastDrawX-1, lastDrawY-1, ballWidth+2, ballHeight+2);
+		 
 		//Cover last Craft position
 		g2d.fillRect(lastDrawCraftX-1, lastDrawCraftY-1, craft.getWidth()+2, craft.getHeight()+2);
+		
 		//Cover old text field
 		g2d.fillRect(5, 0, 75, 30);
 
-		//Draw new Ball position
-		g2d.setColor(Color.RED);
-		drawX = (int) ((ballX - lastBallX) * interpolation + lastBallX - ballWidth/2);
-		drawY = (int) ((ballY - lastBallY) * interpolation + lastBallY - ballHeight/2);
-		g2d.fillOval(drawX, drawY, ballWidth, ballHeight);
+
 
 		// Draw Missiles
 		ArrayList<Missile> msArray = craft.getMissiles();
