@@ -271,7 +271,7 @@ public class Game extends JFrame implements ActionListener,WindowListener
 				//Render. Calculate interpolation for a smooth render.
 				float interpolation = Math.min(1.0f, (float) ((now - lastUpdateTime) / TIME_BETWEEN_UPDATES) );
 				
-				//Call repaint
+				//Call repaint.
 				drawGame(interpolation);
 				lastRenderTime = now;
 
@@ -322,11 +322,11 @@ public class Game extends JFrame implements ActionListener,WindowListener
 			try	{
 				i = Integer.parseInt(str);
 			}
-			catch(NumberFormatException ex){ 
+			catch(NumberFormatException ex) { 
 				  i=-1;
 			}
 			
-			if ((i<0) || (i>255)){
+			if ((i<0) || (i>255)) {
 				return false;
 			}
 		}
@@ -341,9 +341,7 @@ public class Game extends JFrame implements ActionListener,WindowListener
 			InetAddress inet1 = InetAddress.getByName(ipAdd);
 			reachable = inet1.isReachable(1000);
 		} catch (UnknownHostException e) {
-
 		} catch (IOException e){
-
 		}
 
 		return reachable;
@@ -364,8 +362,7 @@ public class Game extends JFrame implements ActionListener,WindowListener
 					Socket clientSocket;
 
 					while (true)
-					{		
-	
+					{
 						System.out.println("Waiting for clients...");
 						clientSocket = serverSocket.accept();
 
@@ -377,42 +374,35 @@ public class Game extends JFrame implements ActionListener,WindowListener
 					}
 					
 				} 
-				catch(SocketTimeoutException e)
-				{
+				catch(SocketTimeoutException e) {
 					System.out.println("Socket timed out!");
 				}
-				catch(IOException e)
-				{
-					if (running)
-					{
+				catch(IOException e) {
+					if (running) {
 						System.out.println("Error: Server PORT already in use");
 						e.printStackTrace();
 					}
-					else
-					{
+					else {
 						System.out.println("Server for new clients closed.");
 					}
-
 				} catch ( Exception e) {
-
 					System.out.println("Error:");
 					e.printStackTrace();
 				}
 			}
 		};
 		startServerThr.start();
-		
 	}
 	
 	private void startClient() {
-		
-		
-		
+
 		Color color= Color.BLACK; 
 		ipAddress.setForeground(color);
 
 		Thread startClientThr = new Thread()
 		{
+			
+
 			public void run()
 			{
 				if(isIPReachable(ipAddress.getText()) == false) {
@@ -435,39 +425,95 @@ public class Game extends JFrame implements ActionListener,WindowListener
 						BufferedReader in = null;
 						out = new PrintWriter(serverNode.getOutputStream());
 						in = new BufferedReader( new InputStreamReader(serverNode.getInputStream()));
-
+						
+						int localCraftNumber;
 						String inputLine = "";
-
+						String[] cData;
+						String[] cDA;
+						
 						//Get initial data from Server
 						inputLine = in.readLine();
-						System.out.println("Client Settings: " + inputLine);	
+						System.out.println("Set craft number: " + inputLine);	
 						
-						//
-						gamePanel.addCraft(1);
+						//Add client Craft.
+						int crr= Integer.parseInt(inputLine);
+						gamePanel.addCraft(crr);
+						
+						//Add Server Craft.
+						gamePanel.addCraft(0);
+						
+						System.out.println("Crafts size= " + gamePanel.getCrafts().size()); 
+						System.out.println(" crr=" + crr );
+						
+						System.out.println(" CR0= " + gamePanel.getCrafts().get(0).getCraftNumber() );
+						System.out.println(" CR1= " + gamePanel.getCrafts().get(1).getCraftNumber() );
 						
 						
-						out.println("50.0");
+						System.out.println(" CRR0= " + gamePanel.getCraftInd(Integer.parseInt("0")) );
+						System.out.println(" CRR1= " + gamePanel.getCraftInd(Integer.parseInt("1")) );
+						
+						
+						
+						//Send first client Craft position
+						float fX = gamePanel.getCrafts().get(1).getCraftX();
+						float fY = gamePanel.getCrafts().get(1).getCraftY();
+						int iDir = gamePanel.getCrafts().get(1).getCraftDirection();
+						out.println(gamePanel.getCrafts().get(1).getCraftNumber()  + ";" + fX +";" + fY + ";" + iDir);
 						out.flush();
-						System.out.println("First XY to server sent");
-
 						
-						while (true) 
+						while (true)
 						{
-							if((inputLine = in.readLine()) != null)
-							{
+							if((inputLine = in.readLine()) != null) {
 								System.out.println("Client got: " + inputLine);									
 							}
-							else
-							{
+							else {
 								break;
 							}
+
+							if (inputLine.contains("=")) {
+								cData = inputLine.split("=");
+								for (String cD: cData)
+								{
+									if (cD.contains(";")) {
+										cDA = cD.split(";");
+										
+										int remoteCraftNumber = Integer.parseInt(cDA[0]);
+										int cInd = gamePanel.getCraftInd(remoteCraftNumber);
+										System.out.println("pi-cN= " + remoteCraftNumber);
+										System.out.println("pi-cN= " + cInd);
+										
+										System.out.println("CN=" + cDA[0] + " x=" + cDA[1] +" y=" + cDA[2] + " d=" + cDA[3] + " zz=" + cInd );
+										localCraftNumber = gamePanel.getCrafts().get(0).getCraftNumber();
+									
+										if ((gamePanel.isCraftPresent(cInd)) && (remoteCraftNumber != localCraftNumber))
+										{
+											System.out.println("Settings, cInd=" + cInd + " remoteCraftNumber=" + remoteCraftNumber + "\n");
+											fX   = Float.parseFloat(cDA[1]);
+											fY   = Float.parseFloat(cDA[2]);
+											iDir = Integer.parseInt(cDA[3]);
+											
+											//getCraftId
+											gamePanel.getCrafts().get(cInd).setCraftX(fX);
+											gamePanel.getCrafts().get(cInd).setCraftY(fY);
+											gamePanel.getCrafts().get(cInd).setCraftDirection(iDir);
+										}
+										if (( gamePanel.isCraftPresent(remoteCraftNumber)) == false)
+										{
+											System.out.println("Added Craft = " + remoteCraftNumber);
+											gamePanel.addCraft(remoteCraftNumber);
+										}
+									}	
+								}
+							}
+							
 							
 							System.out.println("Sending XY to server");
-							float fX= gamePanel.getCrafts().get(0).getX();
-							out.println(fX);
-							//float fY= gamePanel.getCrafts().get(0).getY();
+							System.out.println("");
 							
-							//out.println("cN=" +"1, cX=" + fX +"cY=" + fY );
+							fX= gamePanel.getCrafts().get(0).getCraftX();
+							fY= gamePanel.getCrafts().get(0).getCraftY();
+							iDir= gamePanel.getCrafts().get(0).getCraftDirection();
+							out.println(gamePanel.getCrafts().get(0).getCraftNumber()  + ";" + fX +";" + fY + ";" + iDir);
 							out.flush();
 						}
 						serverNode.close();
@@ -475,8 +521,6 @@ public class Game extends JFrame implements ActionListener,WindowListener
 					} catch (IOException e) {
 						e.printStackTrace();
 					}
-					
-
 				}
 			}
 		};
@@ -525,8 +569,5 @@ public class Game extends JFrame implements ActionListener,WindowListener
 	public void windowDeactivated(WindowEvent e) {
 		//System.out.println("windowDeactivated");
 	}
-
-
-
 
 }

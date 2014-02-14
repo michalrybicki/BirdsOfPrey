@@ -29,7 +29,9 @@ public class Craft {
     private int craftDirection;
     
    	
-    private double lastTimeFired = System.currentTimeMillis();    	
+
+
+	private double lastTimeFired = System.currentTimeMillis();    	
     private double lastTimePressed = System.currentTimeMillis();
     //------------------------------
 	private boolean rightTrue =false;
@@ -42,9 +44,9 @@ public class Craft {
     
     
    
-    public Craft(int i2) {
+    public Craft(int craftNumber) {
     	
-    	this.craftNumber = i2;
+    	this.craftNumber = craftNumber;
     	
     	//Build Space craft
     	images = new ArrayList<Image>();
@@ -73,13 +75,7 @@ public class Craft {
         missiles = new ArrayList<Missile>();
     }
     
-    public float getX() {
-        return craftX;
-    }
 
-    public float getY() {
-        return craftY;
-    }
 
     public Image getImage() {
         return image;
@@ -94,8 +90,7 @@ public class Craft {
     	{
     		if (rightTrue) {
     			craftDirection += 1;
-    			craftDirection %= MAX_DIRECTIONS;			
-    			image = images.get(craftDirection);
+    			craftDirection %= MAX_DIRECTIONS;
     		}
 
     		if (leftTrue) {
@@ -103,9 +98,10 @@ public class Craft {
     				craftDirection =  MAX_DIRECTIONS;
     			}
 				craftDirection -= 1;
-    			image = images.get(craftDirection);
     		}
 
+    		image = images.get(craftDirection);
+    		
     		if (upTrue) {
     			
     			craftXSpeedMultipler = 1;
@@ -251,9 +247,7 @@ public class Craft {
         }
 	}
 
-	public void setCraftX(float craftX) {
-		this.craftX = craftX;
-	}
+	
 
 	//Take no prisoners!
     public void fire() {
@@ -267,9 +261,34 @@ public class Craft {
 	public int getCraftNumber() {
 		return craftNumber;
 	}
+	
+    public float getCraftX() {
+        return craftX;
+    }
 
+    public float getCraftY() {
+        return craftY;
+    }
+    
 	public void setCraftNumber(int craftNumber) {
 		this.craftNumber = craftNumber;
 	}
+	
+	public void setCraftX(float craftX) {
+		this.craftX = craftX;
+	}
+	
+	public void setCraftY(float craftY) {
+		this.craftY = craftY;
+	}
     
+    public int getCraftDirection() {
+		return craftDirection;
+	}
+
+	public void setCraftDirection(int craftDirection) {
+		this.craftDirection = craftDirection;
+	}
+	
+	
 }

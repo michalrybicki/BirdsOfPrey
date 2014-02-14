@@ -25,8 +25,6 @@ class GamePanel extends JPanel
 	private ArrayList<Craft> crafts;
 	
 	//---------------------------------
-	 
-	
 	public int getFps() {
 		return fps;
 	}
@@ -62,14 +60,11 @@ class GamePanel extends JPanel
 
 	public GamePanel()
 	{
-
 		//-------------CRAFT--------------	  
-		addKeyListener(new TAdapter());
-		
+		addKeyListener(new TAdapter());	
 		crafts = new ArrayList<Craft>();
 		 
-		//------------------------------
-		
+		//--------------------------------
 		setFocusable(true);
 		setBackground(Color.BLACK);
 		setDoubleBuffered(true);
@@ -78,6 +73,7 @@ class GamePanel extends JPanel
 	
 	public void addCraft(int i)
 	{
+		System.out.println("Adding craft=" + i);
 		crafts.add(new Craft(i));
 	}
 	
@@ -94,6 +90,27 @@ class GamePanel extends JPanel
 		interpolation = interp;
 	}
 
+	public int getCraftInd(int cN)
+	{
+		for (Craft cR: crafts)
+		{
+			if( cN == cR.getCraftNumber())
+				return crafts.indexOf(cR);
+		}
+		
+		return -1;
+	}
+	
+	public boolean isCraftPresent(int cN) 
+	{
+		for (Craft cR: crafts)
+		{
+			if( cN == cR.getCraftNumber())
+				return true;
+		}
+		return false;
+	}
+	
 	//Update direction and speed
 	public void update()
 	{
@@ -116,7 +133,7 @@ class GamePanel extends JPanel
 		super.paint(g);
 		 
 		Graphics2D g2d = (Graphics2D)g;
-  
+
 		for (Craft craftTmp: crafts )
 		{
 
@@ -135,8 +152,8 @@ class GamePanel extends JPanel
 			}
 
 			//Draw Space Craft
-			int drawCraftX = (int) ((craftTmp.getX() - craftTmp.getLastX()) * interpolation + craftTmp.getLastX() - craftTmp.getWidth()/2);
-			int drawCraftY = (int) ((craftTmp.getY() - craftTmp.getLastY()) * interpolation + craftTmp.getLastY() - craftTmp.getHeight()/2);  
+			int drawCraftX = (int) ((craftTmp.getCraftX() - craftTmp.getLastX()) * interpolation + craftTmp.getLastX() - craftTmp.getWidth()/2);
+			int drawCraftY = (int) ((craftTmp.getCraftY() - craftTmp.getLastY()) * interpolation + craftTmp.getLastY() - craftTmp.getHeight()/2);  
 			g2d.drawImage(craftImage, drawCraftX, drawCraftY, this);
 		}
 
@@ -145,4 +162,6 @@ class GamePanel extends JPanel
 		g2d.drawString("FPS: " + fps, 10, 15);
 		frameCount++;
 	}
+
+	
 }
